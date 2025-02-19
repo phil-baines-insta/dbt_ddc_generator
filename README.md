@@ -1,6 +1,7 @@
 # DBT DDC Generator
 
-A tool for generating Data Documentation and Contracts (DDC) for dbt models.
+A tool for generating Declarative Data Checks (DDC) for dbt models.
+Creates the bare minimum DDCs to get you started.
 
 ## Overview
 
