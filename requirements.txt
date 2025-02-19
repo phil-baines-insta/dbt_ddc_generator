@@ -1,1 +1,4 @@
 click
+types-setuptools
+python-dotenv
+PyYAML

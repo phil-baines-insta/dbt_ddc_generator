@@ -15,9 +15,7 @@ setup(
     description="Utility for dbt ddc generation",
     author="Data Engineering Finance",
     author_email="phillip.baines@instacart.com",
-    classifiers=[
-        "Programming Language :: Python :: 3.9"
-    ],
+    classifiers=["Programming Language :: Python :: 3.9"],
     install_requires=requirements,
     keywords="instacart-dbt",
     python_requires=">=3.8, <4",
