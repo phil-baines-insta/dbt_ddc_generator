@@ -1,0 +1,1 @@
+"""DBT DDC Generator package."""

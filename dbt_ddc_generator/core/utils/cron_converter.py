@@ -15,16 +15,16 @@ class CronConverter:
             minute, hour, _, _, _ = cron_expression.split()
 
             # Handle common patterns
-            if hour.startswith('*/'):
+            if hour.startswith("*/"):
                 # For expressions like "0 */2 * * *"
-                interval = int(hour.replace('*/', ''))
+                interval = int(hour.replace("*/", ""))
                 return f"{interval}h"
-            elif hour == '*':
+            elif hour == "*":
                 # For expressions like "0 * * * *"
                 return "1h"
             else:
                 # Default to 24h for any other pattern
                 return "24h"
-        except:
+        except (ValueError, IndexError, AttributeError):
             # Return 24h as default if parsing fails
             return "24h"

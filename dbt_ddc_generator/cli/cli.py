@@ -1,20 +1,53 @@
+import logging
+import sys
+from typing import Optional
+
 import click
 import pkg_resources
+
 from dbt_ddc_generator.core.generator.generator import Generator
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
-def get_version():
-    """Helper function to get the current version"""
+
+def get_version() -> str:
+    """
+    Get the current version of dbt-ddc-generator.
+
+    Returns:
+        str: Current version or version not available message
+    """
     try:
         return pkg_resources.get_distribution("dbt-ddc-generator").version
     except pkg_resources.DistributionNotFound:
         return "Version information not available"
 
 
+def init_generator() -> Optional[Generator]:
+    """
+    Initialize the Generator with error handling.
+
+    Returns:
+        Optional[Generator]: Initialized generator or None if initialization fails
+    """
+    try:
+        return Generator()
+    except Exception as e:
+        logger.error(f"Failed to initialize generator: {e}")
+        return None
+
+
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
-@click.version_option(get_version(), "-v", "--version", message="%(prog)s version %(version)s")
-def main():
-    """DBT DDC Generator - A tool for generating dbt documentation and data contracts.
+@click.version_option(
+    get_version(), "-v", "--version", message="%(prog)s version %(version)s"
+)
+def main() -> None:
+    """
+    DBT DDC Generator - A tool for generating dbt documentation and data contracts.
 
     This CLI tool helps automate the creation of dbt documentation and data contracts
     for your dbt projects.
@@ -23,30 +56,60 @@ def main():
 
 
 @main.command()
-def version():
+def version() -> None:
     """Display the current version of dbt-ddc-generator."""
     click.echo(f"dbt-ddc-generator version {get_version()}")
 
 
 @main.command(name="generate-ddc")
-@click.argument('model_name', required=True)
-@click.option('--env', type=click.Choice(['local', 'dev', 'prod']), default='local', help='Environment to use for profile configuration')
-def generate_ddc(model_name, env):
-    """Generate DDC (Documentation and Data Contracts) for a specific dbt model.
+@click.argument("model_name", required=True)
+@click.option(
+    "--env",
+    type=click.Choice(["local", "dev", "prod"]),
+    default="local",
+    help="Environment to use for profile configuration (local, dev, or prod)",
+    show_default=True,
+)
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True, resolve_path=True),
+    help="Directory to write generated files (optional)",
+)
+def generate_ddc(model_name: str, env: str, output_dir: Optional[str] = None) -> None:
+    """
+    Generate DDC (Documentation and Data Contracts) for a specific dbt model.
 
     MODEL_NAME: The name of the dbt model to generate DDC for (e.g., 'stg_users' or 'dim_customers')
+
+    Examples:
+        dbt-ddc-generator generate-ddc stg_users --env prod
+        dbt-ddc-generator generate-ddc dim_customers --env dev --output-dir ./ddc_files
     """
     try:
-        generator = Generator()
+        # Initialize generator
+        generator = init_generator()
+        if not generator:
+            raise click.Abort()
+
+        # Generate DDC
+        logger.info(f"Generating DDC for model: {model_name} in environment: {env}")
         generator.generate(model_name, env)
-        click.echo(f"Successfully generated DDC files for model: {model_name}!")
-    except ValueError as e:
-        click.echo(f"Error: {str(e)}", err=True)
-        raise click.Abort()
+
+        logger.info(f"Successfully generated DDC files for model: {model_name}")
+
     except Exception as e:
-        click.echo(f"An unexpected error occurred: {str(e)}", err=True)
+        logger.error(f"Error generating DDC: {e}")
         raise click.Abort()
+
+
+def cli() -> None:
+    """Entry point for the CLI."""
+    try:
+        main()
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    cli()

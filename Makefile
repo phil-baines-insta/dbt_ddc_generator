@@ -1,16 +1,24 @@
-VENV_BIN=venv/bin
+.PHONY: install lint format clean build
 
-init-venv:
-	python -m venv venv
-
-format:
-	$(VENV_BIN)/ruff format .
-	$(VENV_BIN)/ruff check --fix .
+install:
+	pip install -e .
+	pip install -r requirements-dev.txt
 
 lint:
-	$(VENV_BIN)/ruff format --check .
-	$(VENV_BIN)/ruff check --diff .
-	$(VENV_BIN)/mypy --ignore-missing-imports .
+	ruff check .
+	mypy .
+	black --check .
 
-test:
-	$(VENV_BIN)/pytest --verbose tests/ --junit-xml test_results/test-results.xml
+format:
+	ruff check --fix .
+	black .
+
+clean:
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+
+build: clean
+	python setup.py sdist bdist_wheel

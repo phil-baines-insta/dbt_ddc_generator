@@ -1,0 +1,33 @@
+Metadata-Version: 2.2
+Name: dbt-ddc-generator
+Version: 0.1.0
+Summary: A tool for generating dbt documentation and data contracts
+Home-page: https://github.com/yourusername/dbt-ddc-generator
+Author: Phillip Baines
+Author-email: your.email@example.com
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: click
+Requires-Dist: types-setuptools
+Requires-Dist: python-dotenv
+Requires-Dist: PyYAML
+Requires-Dist: Jinja2
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# dbt_ddc_generator
+repository to build DDC yaml from a dbt model
