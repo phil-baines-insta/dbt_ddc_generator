@@ -116,8 +116,20 @@ def generate(model_names: tuple, env: str, output_dir: Optional[str] = None) -> 
                 print("You must enter a branch name")
 
             git_ops = GitOperations()
+
+            # Create or switch to branch first
+            git_ops.create_branch_from_master(branch_name)
+            print()  # Add blank line after branch message
+
             # write_to_carrot returns True if files were created, False if all skipped
-            if git_ops.write_to_carrot(model_names[0], all_generated_checks, branch_name):
+            files_created = False
+            for generated_check in all_generated_checks:
+                model_name = generated_check['model']
+                checks = generated_check['checks']
+                if git_ops.write_to_files(model_name, checks):  # New method that just handles file operations
+                    files_created = True
+
+            if files_created:
                 # Only show commit prompt if files were created
                 if click.confirm('Do you want to commit and push these changes to remote?', default=False):
                     git_ops.commit_and_push(branch_name)
@@ -132,7 +144,7 @@ def generate(model_names: tuple, env: str, output_dir: Optional[str] = None) -> 
                                 break
                             print("You must enter a PR title")
 
-                        git_ops.create_pull_request(branch_name, model_names[0], pr_title)
+                        git_ops.create_pull_request(branch_name, ", ".join(model_names), pr_title)
                     else:
                         logger.info("Skipped creating pull request")
                 else:

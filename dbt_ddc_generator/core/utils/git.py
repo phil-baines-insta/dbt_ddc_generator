@@ -123,43 +123,36 @@ class GitOperations:
             logger.error(f"Failed to create PR: {e}")
             raise
 
-    def write_to_carrot(self, model_name: str, generated_checks: list, branch_name: str) -> bool:
-        """
-        Write generated checks to carrot repo in a new branch.
-
-        Returns:
-            bool: True if files were created, False if all files existed
-        """
+    def write_to_files(self, model_name: str, generated_checks: list) -> bool:
+        """Write check files to disk."""
         try:
             # Check if all files exist first
             all_files_exist = True
+            print(f"Checking existing files for {model_name}...")
+            print(f"Checks for {model_name}:")
+
+            # First check if all files exist
             for check in generated_checks:
                 check_path = os.path.join(self.carrot_directory, f"{model_name}_{check['type']}.yml")
                 if not os.path.exists(check_path):
                     all_files_exist = False
                     break
 
-            if all_files_exist:
-                print("All files already exist - modify these files manually")
-                return False
-
-            # Create or use existing branch
-            self.create_branch_from_master(branch_name)
-
-            # Write files
+            # List all files with their status
             for check in generated_checks:
                 check_path = os.path.join(self.carrot_directory, f"{model_name}_{check['type']}.yml")
                 if os.path.exists(check_path):
-                    print(f"File exists: {os.path.basename(check_path)} - skipping")
+                    print(f"  Skipped: {os.path.basename(check_path)} (already exists)")
                     continue
 
-                with open(check_path, 'w') as f:
-                    f.write(check['content'])
-                print(f"Created file: {os.path.basename(check_path)}")
+                if not all_files_exist:  # Only write if we're creating files
+                    with open(check_path, 'w') as f:
+                        f.write(check['content'])
+                    print(f"  Created: {os.path.basename(check_path)}")
 
-            return True
+            return not all_files_exist
 
         except Exception as e:
-            logger.error(f"Failed to write checks to carrot repo: {e}")
+            logger.error(f"Failed to write check files: {e}")
             raise
 
