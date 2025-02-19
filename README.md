@@ -1,9 +1,3 @@
-
-
-
-
-Yes, I'll create a better formatted README.md that accurately reflects your project structure and functionality:
-
 ```markdown
 # DBT DDC Generator
 
