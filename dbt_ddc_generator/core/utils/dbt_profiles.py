@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import yaml
 from dotenv import load_dotenv
+from dbt_ddc_generator.core.utils.dbt_scheduling import DbtScheduling
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,8 @@ class DbtProfiles:
             raise FileNotFoundError(error_msg)
 
         self.profiles = self._load_profiles()
+        self.dbt_directory = dbt_directory
+        self.scheduling = DbtScheduling(dbt_directory)
 
     def _load_profiles(self) -> Dict[str, Any]:
         """
@@ -113,18 +116,54 @@ class DbtProfiles:
             logger.error(f"Error getting profile target: {e}")
             raise
 
-    def get_database_schema(self, profile_name: str, env: str) -> Optional[Tuple[str, str]]:
+    def get_deploy_profile_from_schedule(self, model_name: str) -> Optional[str]:
+        """Get deploy profile from model's schedule file."""
+        try:
+            # Look in scheduling directory for model's schedule
+            schedule_dir = os.path.join(self.dbt_directory, 'scheduling')
+
+            # Walk through scheduling directory to find model's schedule file
+            for root, _, files in os.walk(schedule_dir):
+                for file in files:
+                    if file.endswith('.yml'):
+                        schedule_path = os.path.join(root, file)
+                        with open(schedule_path, 'r') as f:
+                            schedule = yaml.safe_load(f)
+
+                            # Check if this schedule file contains our model
+                            if model_name in str(schedule):
+                                # Extract deploy_profile
+                                deploy_profile = schedule.get('deploy_profile')
+                                if deploy_profile:
+                                    return deploy_profile
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to get deploy profile from schedule: {e}")
+            return None
+
+    def get_database_schema(self, model_name: str, env: str) -> Optional[Tuple[str, str]]:
         """Get database and schema from profile."""
         try:
-            # Construct target name: de_finance_env (e.g., de_finance_prod)
-            target = f"de_finance_{env}"
+            # Get pipeline config for model
+            pipeline_config = self.scheduling.find_pipeline_config(model_name)
+            if not pipeline_config:
+                return None
+
+            # Get deploy profile from pipeline config
+            deploy_profile = pipeline_config.get('deploy_profile')
+            if not deploy_profile:
+                return None
+
+            # Construct target name using deploy profile and env
+            target = f"{deploy_profile}_{env}"
 
             # Look in the instacart profile's outputs
             instacart_profile = self.profiles.get("instacart", {})
             outputs = instacart_profile.get("outputs", {})
 
             if target not in outputs:
-                logger.warning(f"Profile target not found: {target}")
                 return None
 
             target_config = outputs[target]

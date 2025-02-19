@@ -1,13 +1,16 @@
+import logging
 import os
 from typing import Any, Dict, Optional
 
 import yaml
 
+logger = logging.getLogger(__name__)
 
 class DbtScheduling:
     def __init__(self, dbt_directory: str):
         self.dbt_directory = dbt_directory
         self.scheduling_dir = os.path.join(self.dbt_directory, "scheduling")
+        logger.info(f"Initialized DbtScheduling with directory: {self.scheduling_dir}")
 
         if not os.path.exists(self.scheduling_dir):
             raise ValueError(f"Scheduling directory not found in {self.dbt_directory}")
@@ -22,6 +25,8 @@ class DbtScheduling:
         Returns:
             Optional[Dict]: The pipeline configuration for the model if found, None otherwise
         """
+        logger.info(f"Searching for pipeline config for model: {model_name}")
+
         # Walk through all yml files in scheduling directory
         for root, _, files in os.walk(self.scheduling_dir):
             for file in files:
@@ -36,31 +41,16 @@ class DbtScheduling:
                                 # Look through models list
                                 for model in pipeline_config.get("models", []):
                                     if model.get("name") == model_name:
+                                        profile = pipeline_config.get("profile")
                                         return {
+                                            "deploy_profile": profile,
                                             "file_path": file_path,
-                                            "pipeline_name": os.path.basename(
-                                                root
-                                            ),  # Using directory name as pipeline name
-                                            "schedule": pipeline_config.get(
-                                                "schedule_interval"
-                                            ),
-                                            "owner": pipeline_config.get("owner"),
-                                            "description": pipeline_config.get(
-                                                "description"
-                                            ),
+                                            "pipeline_name": os.path.basename(root),
                                             "model_config": model,
-                                            "profile": pipeline_config.get("profile"),
-                                            "notify_on_failure": pipeline_config.get(
-                                                "notify_on_failure"
-                                            ),
-                                            "tags": pipeline_config.get("tags"),
-                                            "deploy_env": pipeline_config.get(
-                                                "deploy_env"
-                                            ),
                                         }
                     except yaml.YAMLError as e:
-                        print(f"Error parsing {file_path}: {str(e)}")
+                        logger.error(f"Error parsing {file_path}: {e}")
                     except Exception as e:
-                        print(f"Error reading {file_path}: {str(e)}")
+                        logger.error(f"Error reading {file_path}: {e}")
 
         return None

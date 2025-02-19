@@ -64,7 +64,7 @@ def version() -> None:
 
 
 @main.command()
-@click.argument("model_name", required=True)
+@click.argument("model_names", nargs=-1, required=True)  # Accept multiple model names
 @click.option(
     "--env",
     type=click.Choice(["local", "dev", "prod"]),
@@ -77,15 +77,15 @@ def version() -> None:
     type=click.Path(file_okay=False, dir_okay=True, resolve_path=True),
     help="Directory to write generated files (optional)",
 )
-def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> None:
+def generate(model_names: tuple, env: str, output_dir: Optional[str] = None) -> None:
     """
-    Generate DDC (Documentation and Data Contracts) for a specific dbt model.
+    Generate DDC (Documentation and Data Contracts) for specific dbt models.
 
-    MODEL_NAME: The name of the dbt model to generate DDC for (e.g., 'stg_users' or 'dim_customers')
+    MODEL_NAMES: The names of the dbt models to generate DDC for (e.g., 'stg_users dim_customers fact_orders')
 
     Examples:
-        dbtddc generate stg_users --env prod
-        dbtddc generate dim_customers --env dev --output-dir ./ddc_files
+        dbtddc generate stg_users dim_customers --env prod
+        dbtddc generate fact_orders dim_products --env dev
     """
     try:
         # Initialize generator
@@ -93,14 +93,18 @@ def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> Non
         if not generator:
             raise click.Abort()
 
-        # Generate DDC
-        logger.info(f"Generating DDC for model: {model_name} in environment: {env}")
-        generated_checks = generator.generate(model_name, env)
+        all_generated_checks = []
+        # Generate DDC for each model
+        for model_name in model_names:
+            logger.info(f"Generating DDC for model: {model_name} in environment: {env}")
+            generated_checks = generator.generate(model_name, env)
+            all_generated_checks.extend([{'model': model_name, 'checks': generated_checks}])
 
-        # Print generated checks
-        for check in generated_checks:
-            print(check['content'])
-            print("\n---\n")
+            # Print generated checks
+            print(f"\nGenerated checks for {model_name}:")
+            for check in generated_checks:
+                print(check['content'])
+                print("\n---\n")
 
         # Prompt user for creating files
         if click.confirm('Do you want to create these files in the carrot repo?', default=False):
@@ -113,7 +117,7 @@ def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> Non
 
             git_ops = GitOperations()
             # write_to_carrot returns True if files were created, False if all skipped
-            if git_ops.write_to_carrot(model_name, generated_checks, branch_name):
+            if git_ops.write_to_carrot(model_names[0], all_generated_checks, branch_name):
                 # Only show commit prompt if files were created
                 if click.confirm('Do you want to commit and push these changes to remote?', default=False):
                     git_ops.commit_and_push(branch_name)
@@ -128,7 +132,7 @@ def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> Non
                                 break
                             print("You must enter a PR title")
 
-                        git_ops.create_pull_request(branch_name, model_name, pr_title)
+                        git_ops.create_pull_request(branch_name, model_names[0], pr_title)
                     else:
                         logger.info("Skipped creating pull request")
                 else:

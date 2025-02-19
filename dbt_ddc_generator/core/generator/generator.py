@@ -48,10 +48,9 @@ class Generator:
             model = DbtModel(self.dbt_directory, model_name)
 
             # Get database and schema from profile
-            profile_name = "instacart"  # This might need to be configurable
-            db_schema = self.profiles.get_database_schema(profile_name, env)
+            db_schema = self.profiles.get_database_schema(model_name, env)
             if not db_schema:
-                raise ValueError(f"No database/schema found for profile '{profile_name}' in environment '{env}'")
+                raise ValueError(f"No database/schema found for model '{model_name}' in environment '{env}'")
 
             database, schema = db_schema
 
