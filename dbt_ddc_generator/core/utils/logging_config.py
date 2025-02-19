@@ -1,7 +1,7 @@
 import logging.config
 
 
-def setup_logging(default_level: int = logging.INFO) -> None:
+def setup_logging() -> None:
     """Setup logging configuration."""
     config = {
         "version": 1,

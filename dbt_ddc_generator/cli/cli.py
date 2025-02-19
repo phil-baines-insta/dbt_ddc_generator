@@ -156,9 +156,7 @@ def generate(model_names: tuple, env: str, output_dir: Optional[str] = None) -> 
                                 break
                             print("You must enter a PR title")
 
-                        git_ops.create_pull_request(
-                            branch_name, ", ".join(model_names), pr_title
-                        )
+                        git_ops.create_pull_request(branch_name, pr_title)
                     else:
                         logger.info("Skipped creating pull request")
                 else:

@@ -43,7 +43,9 @@ class DbtScheduling:
                                 for model in pipeline_config.get("models", []):
                                     if model.get("name") == model_name:
                                         return {
-                                            "deploy_profile": pipeline_config.get("profile"),
+                                            "deploy_profile": pipeline_config.get(
+                                                "profile"
+                                            ),
                                             "file_path": file_path,
                                             "pipeline_name": os.path.basename(root),
                                             "model_config": model,
