@@ -33,7 +33,7 @@ class Generator:
             raise
 
     def generate(self, model_name: str, env: str = "local") -> list:
-        """Generate documentation and data contracts for a specific dbt model."""
+        """Generate Declarative Data Checks for a specific dbt model."""
         try:
             if not self.dbt_directory:  # Add validation
                 raise ValueError("DBT directory not initialized")

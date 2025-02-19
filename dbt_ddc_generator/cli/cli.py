@@ -48,9 +48,9 @@ def init_generator() -> Optional[Generator]:
 )
 def main() -> None:
     """
-    DBT DDC Generator - A tool for generating dbt documentation and data contracts.
+    DBT DDC Generator - A tool for generating dbt Declarative Data Checks.
 
-    This CLI tool helps automate the creation of dbt documentation and data contracts
+    This CLI tool helps automate the creation of dbt Declarative Data Checks
     for your dbt projects.
     """
     pass
@@ -78,7 +78,7 @@ def version() -> None:
 )
 def generate(model_names: tuple, env: str, output_dir: Optional[str] = None) -> None:
     """
-    Generate DDC (Documentation and Data Contracts) for specific dbt models.
+    Generate DDC (Declarative Data Checks) for specific dbt models.
 
     MODEL_NAMES: The names of the dbt models to generate DDC for (e.g., 'stg_users dim_customers fact_orders')
 
