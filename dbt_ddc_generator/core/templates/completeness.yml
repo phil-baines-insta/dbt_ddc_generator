@@ -1,0 +1,37 @@
+formatVersion: 1
+name: {{ name }}
+description: {{ description }}
+system: data-eng-finance-checks
+every: {{ schedule_interval }}
+mode: list
+source: finance-snowflake
+fail_on: non-zero
+timeout: 20m
+priority: P3
+query: |
+  with src as (
+    select
+      count(1) as source_count
+    from {{ '{{ source_table }}' }}
+    where {{ '{{ source_date_column }}' }} >= current_timestamp - interval '7 days'
+  ),
+
+  target as (
+    select
+      count(1) as target_count
+    from {{ target_table }}
+    where {{ target_date_column }} >= current_timestamp - interval '7 days'
+  )
+
+  select
+    src.source_count,
+    target.target_count,
+    (src.source_count - target.target_count) / src.source_count * 100 as percent_diff
+  from src
+  cross join target
+
+annotations:
+  data_sets:
+    - {{ table_fqdn }}
+compliance:
+  sox: {}

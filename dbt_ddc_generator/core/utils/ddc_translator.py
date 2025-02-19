@@ -5,6 +5,8 @@ from typing import Dict, Optional
 
 from jinja2 import Template
 
+from dbt_ddc_generator.core.utils.dbt_model import DbtModel
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,6 +44,7 @@ class DDCTranslator:
         try:
             self.freshness_template = self._load_template("freshness.yml")
             self.duplicates_template = self._load_template("duplicates.yml")
+            self.completeness_template = self._load_template("completeness.yml")
         except FileNotFoundError as e:
             logger.error(f"Failed to load templates: {e}")
             raise
@@ -139,6 +142,20 @@ class DDCTranslator:
             return self.freshness_template.render(**config)
         except Exception as e:
             logger.error(f"Failed to generate freshness check: {e}")
+            raise
+
+    def generate_completeness_check(self, config: Dict) -> str:
+        """Generate a completeness check YAML configuration."""
+        try:
+            self._validate_config(config)
+
+            # Add target-specific fields
+            config['target_table'] = config['table']
+            config['target_date_column'] = config.get('date_column', 'created_at')
+
+            return self.completeness_template.render(**config)
+        except Exception as e:
+            logger.error(f"Failed to generate completeness check: {e}")
             raise
 
     def write_check_to_file(self, yaml_content: str, output_path: str) -> None:

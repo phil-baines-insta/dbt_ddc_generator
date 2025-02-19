@@ -1,5 +1,5 @@
 formatVersion: 1
-name: {{ name}}
+name: {{ name }}
 description: {{ description }}
 system: data-eng-finance-checks
 every: {{ schedule_interval }}
