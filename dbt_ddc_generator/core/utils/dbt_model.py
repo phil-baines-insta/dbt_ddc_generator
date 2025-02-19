@@ -1,16 +1,19 @@
 import logging
+import os
 import re
 from dataclasses import dataclass, field
 from typing import List, Optional
-import os
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class ModelConfig:
     """Configuration extracted from a dbt model."""
+
     unique_key: Optional[str] = None
     timestamp_columns: List[str] = field(default_factory=list)
+
 
 class DbtModel:
     """Handles parsing and extracting information from dbt model files."""
@@ -24,7 +27,7 @@ class DbtModel:
 
             # Find model file by walking through models directory
             model_file = None
-            models_dir = os.path.join(self.dbt_directory, 'models')
+            models_dir = os.path.join(self.dbt_directory, "models")
             for root, _, files in os.walk(models_dir):
                 if f"{model_name}.sql" in files:
                     model_file = os.path.join(root, f"{model_name}.sql")
@@ -33,7 +36,7 @@ class DbtModel:
             if not model_file:
                 raise ValueError(f"Model file not found for: {model_name}")
 
-            with open(model_file, 'r') as f:
+            with open(model_file, "r") as f:
                 self.model_content = f.read()
 
             self.config = self._parse_model_config()

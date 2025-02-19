@@ -1,14 +1,14 @@
 import logging
 import os
-from typing import Optional
+
 from dotenv import load_dotenv
 
 from dbt_ddc_generator.core.utils.dbt_model import DbtModel
-from dbt_ddc_generator.core.utils.ddc_translator import DDCTranslator
-from dbt_ddc_generator.core.utils.git import GitOperations
 from dbt_ddc_generator.core.utils.dbt_profiles import DbtProfiles
+from dbt_ddc_generator.core.utils.ddc_translator import DDCTranslator
 
 logger = logging.getLogger(__name__)
+
 
 class Generator:
     """Main class for generating DDC files."""
@@ -32,42 +32,38 @@ class Generator:
             logger.error(f"Failed to initialize Generator: {e}")
             raise
 
-    def write_to_carrot(self, model_name: str, generated_checks: list, branch_name: str) -> None:
-        """Write generated checks to carrot repo in a new branch."""
-        try:
-            # Initialize git operations
-            git_ops = GitOperations()
-            git_ops.write_to_carrot(model_name, generated_checks, branch_name)
-        except Exception as e:
-            logger.error(f"Failed to write checks to carrot repo: {e}")
-            raise
-
-    def generate(self, model_name: str, env: str = "local") -> None:
+    def generate(self, model_name: str, env: str = "local") -> list:
         """Generate documentation and data contracts for a specific dbt model."""
         try:
+            if not self.dbt_directory:  # Add validation
+                raise ValueError("DBT directory not initialized")
+
             model = DbtModel(self.dbt_directory, model_name)
 
             # Get database and schema from profile
             db_schema = self.profiles.get_database_schema(model_name, env)
             if not db_schema:
-                raise ValueError(f"No database/schema found for model '{model_name}' in environment '{env}'")
+                raise ValueError(
+                    f"No database/schema found for model '{model_name}' in environment '{env}'"
+                )
 
             database, schema = db_schema
 
             # Common configuration
             base_config = {
                 "table": model_name,
-                "table_fqdn": f"{database}.{schema}.{model_name}",  # Translator will handle lowercase
+                "table_fqdn": f"{database}.{schema}.{model_name}",
             }
 
-            checks = self._generate_checks(model_name, base_config, model)
-            return checks
+            return self._generate_checks(model_name, base_config, model)
 
         except Exception as e:
             logger.error(f"Error generating DDC: {e}")
             raise
 
-    def _generate_checks(self, model_name: str, base_config: dict, model: DbtModel) -> list:
+    def _generate_checks(
+        self, model_name: str, base_config: dict, model: DbtModel
+    ) -> list:
         """Generate and output DDC checks."""
         try:
             generated_checks = []
@@ -80,10 +76,14 @@ class Generator:
                 "description": f"Check for duplicates in {model_name}",
                 "column_name": model.get_unique_key() or "id",
             }
-            generated_checks.append({
-                'type': 'duplicates',
-                'content': self.translator.generate_duplicates_check(duplicates_config)
-            })
+            generated_checks.append(
+                {
+                    "type": "duplicates",
+                    "content": self.translator.generate_duplicates_check(
+                        duplicates_config
+                    ),
+                }
+            )
 
             # Generate completeness check
             logger.info(f"Generating completeness check for {model_name}")
@@ -93,10 +93,14 @@ class Generator:
                 "description": f"Check completeness of {model_name}",
                 "column_name": model.get_unique_key() or "id",
             }
-            generated_checks.append({
-                'type': 'completeness',
-                'content': self.translator.generate_completeness_check(completeness_config)
-            })
+            generated_checks.append(
+                {
+                    "type": "completeness",
+                    "content": self.translator.generate_completeness_check(
+                        completeness_config
+                    ),
+                }
+            )
 
             # Generate freshness check
             logger.info(f"Generating freshness check for {model_name}")
@@ -107,10 +111,14 @@ class Generator:
                 "column_name": "etl_created_date_time_utc",  # Default to etl_created_date_time_utc
                 "freshness_interval": "24h",
             }
-            generated_checks.append({
-                'type': 'freshness',
-                'content': self.translator.generate_freshness_check(freshness_config)
-            })
+            generated_checks.append(
+                {
+                    "type": "freshness",
+                    "content": self.translator.generate_freshness_check(
+                        freshness_config
+                    ),
+                }
+            )
 
             return generated_checks
 

@@ -5,8 +5,6 @@ from typing import Dict, Optional
 
 from jinja2 import Template
 
-from dbt_ddc_generator.core.utils.dbt_model import DbtModel
-
 logger = logging.getLogger(__name__)
 
 
@@ -154,8 +152,8 @@ class DDCTranslator:
             self._validate_config(config)
 
             # Add target-specific fields
-            config['target_table'] = config['table']
-            config['target_date_column'] = config.get('date_column', 'created_at')
+            config["target_table"] = config["table"]
+            config["target_date_column"] = config.get("date_column", "created_at")
 
             return self.completeness_template.render(**config)
         except Exception as e:

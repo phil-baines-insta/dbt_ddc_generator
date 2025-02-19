@@ -6,6 +6,7 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+
 class DbtScheduling:
     def __init__(self, dbt_directory: str):
         self.dbt_directory = dbt_directory

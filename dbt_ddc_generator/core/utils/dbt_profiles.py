@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import yaml
 from dotenv import load_dotenv
+
 from dbt_ddc_generator.core.utils.dbt_scheduling import DbtScheduling
 
 logger = logging.getLogger(__name__)
@@ -120,20 +121,20 @@ class DbtProfiles:
         """Get deploy profile from model's schedule file."""
         try:
             # Look in scheduling directory for model's schedule
-            schedule_dir = os.path.join(self.dbt_directory, 'scheduling')
+            schedule_dir = os.path.join(self.dbt_directory, "scheduling")
 
             # Walk through scheduling directory to find model's schedule file
             for root, _, files in os.walk(schedule_dir):
                 for file in files:
-                    if file.endswith('.yml'):
+                    if file.endswith(".yml"):
                         schedule_path = os.path.join(root, file)
-                        with open(schedule_path, 'r') as f:
+                        with open(schedule_path, "r") as f:
                             schedule = yaml.safe_load(f)
 
                             # Check if this schedule file contains our model
                             if model_name in str(schedule):
                                 # Extract deploy_profile
-                                deploy_profile = schedule.get('deploy_profile')
+                                deploy_profile = schedule.get("deploy_profile")
                                 if deploy_profile:
                                     return deploy_profile
 
@@ -143,7 +144,9 @@ class DbtProfiles:
             logger.error(f"Failed to get deploy profile from schedule: {e}")
             return None
 
-    def get_database_schema(self, model_name: str, env: str) -> Optional[Tuple[str, str]]:
+    def get_database_schema(
+        self, model_name: str, env: str
+    ) -> Optional[Tuple[str, str]]:
         """Get database and schema from profile."""
         try:
             # Get pipeline config for model
@@ -152,7 +155,7 @@ class DbtProfiles:
                 return None
 
             # Get deploy profile from pipeline config
-            deploy_profile = pipeline_config.get('deploy_profile')
+            deploy_profile = pipeline_config.get("deploy_profile")
             if not deploy_profile:
                 return None
 
@@ -167,7 +170,7 @@ class DbtProfiles:
                 return None
 
             target_config = outputs[target]
-            return target_config.get('database'), target_config.get('schema')
+            return target_config.get("database"), target_config.get("schema")
 
         except Exception as e:
             logger.error(f"Failed to get database/schema: {e}")

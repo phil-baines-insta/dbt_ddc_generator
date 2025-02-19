@@ -1,10 +1,12 @@
 import logging
 import os
 import subprocess
+
 import requests
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
 
 class GitOperations:
     """Handle Git operations for the carrot repository."""
@@ -13,17 +15,24 @@ class GitOperations:
         """Initialize GitOperations with carrot directory."""
         try:
             load_dotenv()
-            self.carrot_directory = os.getenv("carrot_directory")
-            self.github_token = os.getenv("GITHUB_TOKEN")
-            if not self.carrot_directory:
+            carrot_directory = os.getenv("carrot_directory")
+            github_token = os.getenv("GITHUB_TOKEN")
+
+            if not carrot_directory:
                 raise ValueError("Carrot directory not found in environment variables")
-            if not self.github_token:
+            if not github_token:
                 raise ValueError("GitHub token not found in environment variables")
 
-            if not os.path.exists(self.carrot_directory):
-                raise ValueError(f"Carrot directory does not exist: {self.carrot_directory}")
+            if not os.path.exists(carrot_directory):
+                raise ValueError(f"Carrot directory does not exist: {carrot_directory}")
 
-            logger.info(f"Initialized GitOperations for carrot directory: {self.carrot_directory}")
+            # Store as str since we validated
+            self.carrot_directory: str = carrot_directory
+            self.github_token: str = github_token
+
+            logger.info(
+                f"Initialized GitOperations for carrot directory: {self.carrot_directory}"
+            )
         except Exception as e:
             logger.error(f"Failed to initialize GitOperations: {e}")
             raise
@@ -38,22 +47,34 @@ class GitOperations:
                 ["git", "branch", "--list", branch_name],
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
 
             if result.stdout.strip():
                 # Branch exists, just check it out
                 logger.info(f"Using existing branch: {branch_name}")
-                subprocess.run(["git", "checkout", branch_name], check=True, capture_output=True)
+                subprocess.run(
+                    ["git", "checkout", branch_name], check=True, capture_output=True
+                )
             else:
                 # Create new branch from master
                 logger.info("Switching to master branch in carrot repo")
-                subprocess.run(["git", "fetch", "origin"], check=True, capture_output=True)
-                subprocess.run(["git", "checkout", "master"], check=True, capture_output=True)
-                subprocess.run(["git", "pull", "origin", "master"], check=True, capture_output=True)
+                subprocess.run(
+                    ["git", "fetch", "origin"], check=True, capture_output=True
+                )
+                subprocess.run(
+                    ["git", "checkout", "master"], check=True, capture_output=True
+                )
+                subprocess.run(
+                    ["git", "pull", "origin", "master"], check=True, capture_output=True
+                )
 
                 logger.info(f"Creating new branch: {branch_name}")
-                subprocess.run(["git", "checkout", "-b", branch_name], check=True, capture_output=True)
+                subprocess.run(
+                    ["git", "checkout", "-b", branch_name],
+                    check=True,
+                    capture_output=True,
+                )
                 print(f"Created branch: {branch_name}")
 
         except subprocess.CalledProcessError as e:
@@ -71,11 +92,19 @@ class GitOperations:
 
             # Add and commit (suppress output)
             subprocess.run(["git", "add", "."], check=True, capture_output=True)
-            subprocess.run(["git", "commit", "-m", "feat: add ddc checks"], check=True, capture_output=True)
+            subprocess.run(
+                ["git", "commit", "-m", "feat: add ddc checks"],
+                check=True,
+                capture_output=True,
+            )
 
             # Push to remote
             logger.info(f"Pushing branch {branch_name} to remote")
-            subprocess.run(["git", "push", "-u", "origin", branch_name], check=True, capture_output=True)
+            subprocess.run(
+                ["git", "push", "-u", "origin", branch_name],
+                check=True,
+                capture_output=True,
+            )
 
             print(f"Changes pushed to branch: {branch_name}")
         except subprocess.CalledProcessError as e:
@@ -85,7 +114,9 @@ class GitOperations:
             logger.error(f"Failed to commit and push changes: {e}")
             raise
 
-    def create_pull_request(self, branch_name: str, model_name: str, pr_title: str) -> None:
+    def create_pull_request(
+        self, branch_name: str, model_name: str, pr_title: str
+    ) -> None:
         """Create a pull request on GitHub."""
         try:
             logger.info("Creating pull request")
@@ -99,13 +130,13 @@ class GitOperations:
                 "body": f"Add DDC checks for {model_name}\n\nGenerated using dbt-ddc-generator",
                 "head": branch_name,
                 "base": "master",
-                "draft": True  # Create PR in draft mode
+                "draft": True,  # Create PR in draft mode
             }
 
             # Headers with authentication
             headers = {
                 "Authorization": f"token {self.github_token}",
-                "Accept": "application/vnd.github.v3+json"
+                "Accept": "application/vnd.github.v3+json",
             }
 
             # Create PR
@@ -133,21 +164,25 @@ class GitOperations:
 
             # First check if all files exist
             for check in generated_checks:
-                check_path = os.path.join(self.carrot_directory, f"{model_name}_{check['type']}.yml")
+                check_path = os.path.join(
+                    self.carrot_directory, f"{model_name}_{check['type']}.yml"
+                )
                 if not os.path.exists(check_path):
                     all_files_exist = False
                     break
 
             # List all files with their status
             for check in generated_checks:
-                check_path = os.path.join(self.carrot_directory, f"{model_name}_{check['type']}.yml")
+                check_path = os.path.join(
+                    self.carrot_directory, f"{model_name}_{check['type']}.yml"
+                )
                 if os.path.exists(check_path):
                     print(f"  Skipped: {os.path.basename(check_path)} (already exists)")
                     continue
 
                 if not all_files_exist:  # Only write if we're creating files
-                    with open(check_path, 'w') as f:
-                        f.write(check['content'])
+                    with open(check_path, "w") as f:
+                        f.write(check["content"])
                     print(f"  Created: {os.path.basename(check_path)}")
 
             return not all_files_exist
@@ -155,4 +190,3 @@ class GitOperations:
         except Exception as e:
             logger.error(f"Failed to write check files: {e}")
             raise
-

@@ -3,6 +3,7 @@
 install:
 	pip install -e .
 	pip install -r requirements-dev.txt
+	pip install -r requirements.txt
 
 lint:
 	ruff check .
@@ -22,3 +23,9 @@ clean:
 
 build: clean
 	python setup.py sdist bdist_wheel
+
+test_results:
+	mkdir -p test_results
+
+test: test_results
+	pytest --verbose tests/ --junit-xml test_results/test-results.xml
