@@ -137,5 +137,3 @@ The project uses:
 3. Run tests and linting
 4. Submit a pull request
 ```
-
-Would you like me to make these changes to your README.md?
