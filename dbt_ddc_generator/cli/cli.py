@@ -61,7 +61,7 @@ def version() -> None:
     click.echo(f"dbt-ddc-generator version {get_version()}")
 
 
-@main.command(name="generate-ddc")
+@main.command()
 @click.argument("model_name", required=True)
 @click.option(
     "--env",
@@ -75,15 +75,15 @@ def version() -> None:
     type=click.Path(file_okay=False, dir_okay=True, resolve_path=True),
     help="Directory to write generated files (optional)",
 )
-def generate_ddc(model_name: str, env: str, output_dir: Optional[str] = None) -> None:
+def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> None:
     """
     Generate DDC (Documentation and Data Contracts) for a specific dbt model.
 
     MODEL_NAME: The name of the dbt model to generate DDC for (e.g., 'stg_users' or 'dim_customers')
 
     Examples:
-        dbt-ddc-generator generate-ddc stg_users --env prod
-        dbt-ddc-generator generate-ddc dim_customers --env dev --output-dir ./ddc_files
+        dbtddc generate stg_users --env prod
+        dbtddc generate dim_customers --env dev --output-dir ./ddc_files
     """
     try:
         # Initialize generator

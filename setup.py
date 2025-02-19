@@ -12,11 +12,11 @@ setup(
     name="dbt-ddc-generator",
     version="0.1.0",
     author="Phillip Baines",
-    author_email="your.email@example.com",
+    author_email="phillip.baines@instacart.com",
     description="A tool for generating dbt documentation and data contracts",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/dbt-ddc-generator",
+    url="https://github.com/instacart/dbt-ddc-generator",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -31,7 +31,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "dbt-ddc-generator=dbt_ddc_generator.cli.cli:cli",
+            "dbtddc=dbt_ddc_generator.cli.cli:cli",
         ],
     },
     include_package_data=True,

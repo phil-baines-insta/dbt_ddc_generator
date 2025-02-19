@@ -1,5 +1,0 @@
-click
-types-setuptools
-python-dotenv
-PyYAML
-Jinja2
