@@ -94,9 +94,26 @@ def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> Non
 
         # Generate DDC
         logger.info(f"Generating DDC for model: {model_name} in environment: {env}")
-        generator.generate(model_name, env)
+        generated_checks = generator.generate(model_name, env)
 
-        logger.info(f"Successfully generated DDC files for model: {model_name}")
+        # Print generated checks
+        for check in generated_checks:
+            print(check['content'])
+            print("\n---\n")
+
+        # Prompt user
+        if click.confirm('Do you want to create these files in the carrot repo?', default=False):
+            # Keep prompting until valid branch name is provided
+            while True:
+                branch_name = click.prompt('Enter branch name', type=str, default='')
+                if branch_name:
+                    break
+                print("You must enter a branch name")  # Use print instead of logger for cleaner output
+
+            generator.write_to_carrot(model_name, generated_checks, branch_name)
+            logger.info(f"Successfully written checks to carrot repo in branch: {branch_name}")
+        else:
+            logger.info("Skipped writing to carrot repo")
 
     except Exception as e:
         logger.error(f"Error generating DDC: {e}")
