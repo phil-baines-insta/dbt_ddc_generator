@@ -2,6 +2,9 @@ import os
 from dotenv import load_dotenv
 from dbt_ddc_generator.core.utils.dbt_scheduling import DbtScheduling
 from dbt_ddc_generator.core.utils.dbt_profiles import DbtProfiles
+from dbt_ddc_generator.core.utils.dbt_model import DbtModel
+from dbt_ddc_generator.core.utils.ddc_translator import DDCTranslator
+from dbt_ddc_generator.core.utils.cron_converter import CronConverter
 
 class Generator:
     def __init__(self):
@@ -19,68 +22,60 @@ class Generator:
 
         self.scheduling = DbtScheduling(self.dbt_directory)
         self.profiles = DbtProfiles(self.dbt_directory)
+        self.translator = DDCTranslator(self.dbt_directory)
+        self.cron_converter = CronConverter()
 
     def generate(self, model_name: str, env: str = 'local'):
         """
         Generate documentation and data contracts for a specific dbt model.
-
-        Args:
-            model_name: The name of the dbt model to generate DDC for
-            env: The environment to use for profile configuration
         """
-        # Validate dbt project structure
-        models_dir = os.path.join(self.dbt_directory, 'models')
-        if not os.path.exists(models_dir):
-            raise ValueError(f"Models directory not found in {self.dbt_directory}")
+        # Get model info
+        model = DbtModel(self.dbt_directory, model_name)
+        unique_key = model.get_unique_key()
+        if not unique_key:
+            return
 
-        # Find the model file
-        model_file = None
-        for root, _, files in os.walk(models_dir):
-            for file in files:
-                if file == f"{model_name}.sql":
-                    model_file = os.path.join(root, file)
-                    break
-            if model_file:
-                print(model_file)
-                break
-
-        if not model_file:
-            raise ValueError(f"Model '{model_name}' not found in {models_dir}")
-
-        # Find scheduling configuration
+        # Get pipeline and profile info
         pipeline_config = self.scheduling.find_pipeline_config(model_name)
-        if pipeline_config:
-            print(f"\nPipeline Configuration:")
-            print(f"  File: {pipeline_config['file_path']}")
+        if not pipeline_config:
+            return
 
-            # Get and display profile information
-            profile_name = pipeline_config['profile']
-            print(f"  Profile: {profile_name}")
+        profile_name = pipeline_config['profile']
+        if not profile_name:
+            return
 
-            if profile_name:
-                db_schema = self.profiles.get_database_schema(profile_name, env)
-                if db_schema:
-                    database, schema = db_schema
-                    print(f"  Target Environment: {env}")
-                    print(f"  Target Database: {database}")
-                    print(f"  Target Schema: {schema}")
-                else:
-                    print(f"  Warning: No database/schema configuration found for profile '{profile_name}' in {env} environment")
+        # Get database and schema
+        db_schema = self.profiles.get_database_schema(profile_name, env)
+        if not db_schema:
+            return
 
-            print(f"  Pipeline: {pipeline_config['pipeline_name']}")
-            print(f"  Owner: {pipeline_config['owner']}")
-            print(f"  Schedule: {pipeline_config['schedule']}")
-            print(f"  Description: {pipeline_config['description']}")
-            if pipeline_config['model_config'].get('sensors'):
-                print("\n  Sensors:")
-                for sensor in pipeline_config['model_config']['sensors']:
-                    print(f"    - {sensor}")
-            if pipeline_config['model_config'].get('create_upstream_models'):
-                print("\n  Upstream Models:")
-                for model in pipeline_config['model_config']['create_upstream_models']:
-                    print(f"    - {model}")
-        else:
-            print(f"\nNo pipeline configuration found for model: {model_name}")
+        database, schema = db_schema
+
+        # Generate and print duplicates check
+        duplicates_config = {
+            'name': f'{database.lower()}.{schema.lower()}.{model_name} duplicate check',
+            'description': f'Check for duplicate {unique_key} in {model_name}',
+            'schedule_interval': CronConverter.to_hourly(pipeline_config['schedule']),
+            'table': f'{database}.{schema}.{model_name}',
+            'column_name': unique_key,
+            'table_fqdn': f'{database}.{schema}.{model_name}'
+        }
+
+        print(self.translator.generate_duplicates_check(duplicates_config))
+        print("\n---\n")  # Separator between checks
+
+        # Generate and print freshness check
+        freshness_config = {
+            'name': f'{database.lower()}.{schema.lower()}.{model_name} freshness check',
+            'description': f'Check freshness of {model_name}',
+            'schedule_interval': CronConverter.to_hourly(pipeline_config['schedule']),
+            'table': f'{database}.{schema}.{model_name}',
+            'column_name': 'updated_at',  # We can make this configurable later
+            'freshness_interval': '24h',
+            'table_fqdn': f'{database}.{schema}.{model_name}'
+        }
+
+        print(self.translator.generate_freshness_check(freshness_config))
 
         # TODO: Implement the following steps:
         # 1. Parse the specific SQL file for column information
