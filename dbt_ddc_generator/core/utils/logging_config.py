@@ -1,15 +1,8 @@
 import logging.config
-import os
 
 
-def setup_logging(default_level: int = logging.INFO, env_key: str = "LOG_CFG") -> None:
-    """
-    Setup logging configuration.
-
-    Args:
-        default_level: Default logging level
-        env_key: Environment variable that points to logging config file
-    """
+def setup_logging(default_level: int = logging.INFO) -> None:
+    """Setup logging configuration."""
     config = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -47,13 +40,5 @@ def setup_logging(default_level: int = logging.INFO, env_key: str = "LOG_CFG") -
             },
         },
     }
-
-    path = os.getenv(env_key, None)
-    if path and os.path.exists(path):
-        with open(path, "rt") as f:
-            try:
-                config = eval(f.read())
-            except Exception as e:
-                print(f"Error loading logging configuration: {e}")
 
     logging.config.dictConfig(config)

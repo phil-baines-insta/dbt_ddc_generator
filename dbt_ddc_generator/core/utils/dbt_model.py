@@ -12,7 +12,6 @@ class ModelConfig:
     """Configuration extracted from a dbt model."""
 
     unique_key: Optional[str] = None
-    timestamp_columns: List[str] = field(default_factory=list)
 
 
 class DbtModel:
@@ -73,8 +72,3 @@ class DbtModel:
         """Get the unique_key from model config."""
         logger.debug(f"Getting unique key for model {self.model_name}")
         return self.config.unique_key
-
-    def get_timestamp_columns(self) -> List[str]:
-        """Get potential timestamp columns from the model."""
-        logger.debug(f"Getting timestamp columns for model {self.model_name}")
-        return self.config.timestamp_columns

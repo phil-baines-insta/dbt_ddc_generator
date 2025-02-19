@@ -114,10 +114,8 @@ class GitOperations:
             logger.error(f"Failed to commit and push changes: {e}")
             raise
 
-    def create_pull_request(
-        self, branch_name: str, model_name: str, pr_title: str
-    ) -> None:
-        """Create a pull request on GitHub."""
+    def create_pull_request(self, branch_name: str, title: str) -> None:
+        """Create a pull request for the current branch."""
         try:
             logger.info("Creating pull request")
 
@@ -126,8 +124,8 @@ class GitOperations:
 
             # PR data
             data = {
-                "title": pr_title,
-                "body": f"Add DDC checks for {model_name}\n\nGenerated using dbt-ddc-generator",
+                "title": title,
+                "body": f"Add DDC checks for {branch_name}\n\nGenerated using dbt-ddc-generator",
                 "head": branch_name,
                 "base": "master",
                 "draft": True,  # Create PR in draft mode
