@@ -15,7 +15,7 @@ The DBT DDC Generator automates the creation of data quality checks and document
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.9.11 or higher
 - Poetry for dependency management
 
 ### Install from Source
