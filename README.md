@@ -1,4 +1,3 @@
-```markdown
 # DBT DDC Generator
 
 A tool for generating Data Documentation and Contracts (DDC) for dbt models.
@@ -20,19 +19,16 @@ The DBT DDC Generator automates the creation of data quality checks and document
 
 ### Install from Source
 
+Clone the repository and install dependencies:
 ```bash
-# Clone the repository
 git clone git@github.com:instacart/dbt-ddc-generator.git
 cd dbt-ddc-generator
-
-# Install dependencies
 poetry install
 ```
 
 ### Environment Setup
 
 Create a `.env` file in the project root:
-
 ```bash
 instacart_dbt_directory=/path/to/your/dbt/project
 dbt_profiles_directory=/path/to/your/dbt/profiles
@@ -44,11 +40,12 @@ GITHUB_TOKEN=your_github_token
 
 ### Basic Commands
 
+Generate checks for models:
 ```bash
-# Generate checks for a single model
+# Single model
 dbtddc generate fact_orders --env prod
 
-# Generate checks for multiple models
+# Multiple models
 dbtddc generate fact_orders dim_products --env prod
 
 # Show version
@@ -79,8 +76,7 @@ dbt_ddc_generator/
 │       ├── dbt_profiles.py   # Profile management
 │       ├── dbt_scheduling.py # Schedule parsing
 │       ├── ddc_translator.py # Template rendering
-│       ├── git.py           # Git operations
-│       └── cron_converter.py # Cron expression handling
+│       └── git.py           # Git operations
 └── tests/                # Test suite
 ```
 
@@ -88,8 +84,8 @@ dbt_ddc_generator/
 
 ### Setup Development Environment
 
+Install all dependencies including dev dependencies:
 ```bash
-# Install all dependencies including dev dependencies
 poetry install
 ```
 
@@ -109,20 +105,12 @@ make test
 make build
 ```
 
-### Testing
-
-Tests are written using pytest and can be run with:
-
-```bash
-make test
-```
-
 ### Code Style
 
 The project uses:
-- Black for code formatting
-- Ruff for linting
-- MyPy for type checking
+- **Black**: Code formatting
+- **Ruff**: Linting
+- **MyPy**: Type checking
 
 ## Contributing
 
@@ -130,4 +118,3 @@ The project uses:
 2. Make your changes
 3. Run tests and linting
 4. Submit a pull request
-```
