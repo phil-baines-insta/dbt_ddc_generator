@@ -29,26 +29,38 @@ class GitOperations:
             raise
 
     def create_branch_from_master(self, branch_name: str) -> None:
-        """Switch to master, pull latest, and create new branch."""
+        """Switch to master, pull latest, and create new branch or use existing."""
         try:
-            logger.info("Switching to master branch in carrot repo")
             os.chdir(self.carrot_directory)
 
-            # Fetch and checkout master (suppress output)
-            subprocess.run(["git", "fetch", "origin"], check=True, capture_output=True)
-            subprocess.run(["git", "checkout", "master"], check=True, capture_output=True)
-            subprocess.run(["git", "pull", "origin", "master"], check=True, capture_output=True)
+            # Check if branch exists
+            result = subprocess.run(
+                ["git", "branch", "--list", branch_name],
+                check=True,
+                capture_output=True,
+                text=True
+            )
 
-            # Create and checkout new branch
-            logger.info(f"Creating new branch: {branch_name}")
-            subprocess.run(["git", "checkout", "-b", branch_name], check=True, capture_output=True)
+            if result.stdout.strip():
+                # Branch exists, just check it out
+                logger.info(f"Using existing branch: {branch_name}")
+                subprocess.run(["git", "checkout", branch_name], check=True, capture_output=True)
+            else:
+                # Create new branch from master
+                logger.info("Switching to master branch in carrot repo")
+                subprocess.run(["git", "fetch", "origin"], check=True, capture_output=True)
+                subprocess.run(["git", "checkout", "master"], check=True, capture_output=True)
+                subprocess.run(["git", "pull", "origin", "master"], check=True, capture_output=True)
 
-            print(f"Created branch: {branch_name}")
+                logger.info(f"Creating new branch: {branch_name}")
+                subprocess.run(["git", "checkout", "-b", branch_name], check=True, capture_output=True)
+                print(f"Created branch: {branch_name}")
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Git command failed in carrot repo: {e}")
             raise
         except Exception as e:
-            logger.error(f"Failed to create branch in carrot repo: {e}")
+            logger.error(f"Failed to create/use branch in carrot repo: {e}")
             raise
 
     def commit_and_push(self, branch_name: str) -> None:
@@ -110,3 +122,44 @@ class GitOperations:
         except Exception as e:
             logger.error(f"Failed to create PR: {e}")
             raise
+
+    def write_to_carrot(self, model_name: str, generated_checks: list, branch_name: str) -> bool:
+        """
+        Write generated checks to carrot repo in a new branch.
+
+        Returns:
+            bool: True if files were created, False if all files existed
+        """
+        try:
+            # Check if all files exist first
+            all_files_exist = True
+            for check in generated_checks:
+                check_path = os.path.join(self.carrot_directory, f"{model_name}_{check['type']}.yml")
+                if not os.path.exists(check_path):
+                    all_files_exist = False
+                    break
+
+            if all_files_exist:
+                print("All files already exist - modify these files manually")
+                return False
+
+            # Create or use existing branch
+            self.create_branch_from_master(branch_name)
+
+            # Write files
+            for check in generated_checks:
+                check_path = os.path.join(self.carrot_directory, f"{model_name}_{check['type']}.yml")
+                if os.path.exists(check_path):
+                    print(f"File exists: {os.path.basename(check_path)} - skipping")
+                    continue
+
+                with open(check_path, 'w') as f:
+                    f.write(check['content'])
+                print(f"Created file: {os.path.basename(check_path)}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to write checks to carrot repo: {e}")
+            raise
+

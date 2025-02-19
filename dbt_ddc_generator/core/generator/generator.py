@@ -37,18 +37,7 @@ class Generator:
         try:
             # Initialize git operations
             git_ops = GitOperations()
-
-            # Create new branch from master
-            git_ops.create_branch_from_master(branch_name)
-
-            # Write files
-            carrot_dir = os.getenv("carrot_directory")
-            for check in generated_checks:
-                check_path = os.path.join(carrot_dir, f"{model_name}_{check['type']}.yml")
-                with open(check_path, 'w') as f:
-                    f.write(check['content'])
-                logger.info(f"Written {check['type']} check to {check_path}")
-
+            git_ops.write_to_carrot(model_name, generated_checks, branch_name)
         except Exception as e:
             logger.error(f"Failed to write checks to carrot repo: {e}")
             raise

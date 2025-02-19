@@ -111,29 +111,28 @@ def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> Non
                     break
                 print("You must enter a branch name")
 
-            generator.write_to_carrot(model_name, generated_checks, branch_name)
-            logger.info(f"Successfully written checks to carrot repo in branch: {branch_name}")
+            git_ops = GitOperations()
+            # write_to_carrot returns True if files were created, False if all skipped
+            if git_ops.write_to_carrot(model_name, generated_checks, branch_name):
+                # Only show commit prompt if files were created
+                if click.confirm('Do you want to commit and push these changes to remote?', default=False):
+                    git_ops.commit_and_push(branch_name)
+                    logger.info(f"Successfully pushed changes to remote branch: {branch_name}")
 
-            # Prompt for commit and push
-            if click.confirm('Do you want to commit and push these changes to remote?', default=False):
-                git_ops = GitOperations()
-                git_ops.commit_and_push(branch_name)
-                logger.info(f"Successfully pushed changes to remote branch: {branch_name}")
+                    # Prompt for PR creation
+                    if click.confirm('Do you want to create a pull request?', default=False):
+                        # Keep prompting until valid PR title is provided
+                        while True:
+                            pr_title = click.prompt('Enter PR title', type=str)
+                            if pr_title:
+                                break
+                            print("You must enter a PR title")
 
-                # Prompt for PR creation
-                if click.confirm('Do you want to create a pull request?', default=False):
-                    # Keep prompting until valid PR title is provided
-                    while True:
-                        pr_title = click.prompt('Enter PR title', type=str)
-                        if pr_title:
-                            break
-                        print("You must enter a PR title")
-
-                    git_ops.create_pull_request(branch_name, model_name, pr_title)
+                        git_ops.create_pull_request(branch_name, model_name, pr_title)
+                    else:
+                        logger.info("Skipped creating pull request")
                 else:
-                    logger.info("Skipped creating pull request")
-            else:
-                logger.info("Skipped pushing changes to remote")
+                    logger.info("Skipped pushing changes to remote")
         else:
             logger.info("Skipped writing to carrot repo")
 
