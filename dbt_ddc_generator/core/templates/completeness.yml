@@ -2,7 +2,7 @@ formatVersion: 1
 name: {{ name }}
 description: {{ description }}
 system: data-eng-finance-checks
-every: {{ schedule_interval }}
+every: 24h
 mode: list
 source: finance-snowflake
 fail_on: non-zero
@@ -19,7 +19,7 @@ query: |
   target as (
     select
       count(1) as target_count
-    from {{ target_table }}
+    from {{ table_fqdn }}
     where {{ target_date_column }} >= current_timestamp - interval '7 days'
   )
 

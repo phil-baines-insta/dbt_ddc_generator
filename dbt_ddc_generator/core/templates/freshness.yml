@@ -2,7 +2,7 @@ formatVersion: 1
 name: {{ name }}
 description: {{ description }}
 system: data-eng-finance-checks
-every: {{ schedule_interval }}
+every: 24h
 mode: list
 source: finance-snowflake
 fail_on: zero
@@ -11,8 +11,8 @@ priority: P3
 query: |
   select
     true
-  from {{ table }}
-  where {{ column_name }} >= current_timestamp - interval '{{ freshness_interval }}'
+  from {{ table_fqdn }}
+  where {{ column_name }} > current_timestamp - interval '{{ freshness_interval }}'
   limit 1
 annotations:
   data_sets:

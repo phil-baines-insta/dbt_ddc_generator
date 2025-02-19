@@ -2,6 +2,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from typing import List, Optional
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,25 @@ class DbtModel:
             self.model_name = model_name
             self.dbt_directory = dbt_directory
             logger.info(f"Initializing DbtModel for {model_name}")
+
+            # Read model content from SQL file
+            model_path = os.path.join(
+                self.dbt_directory,
+                'models',
+                'marts',
+                'de_finance',
+                'build_tax_tables',
+                'fact_tables',
+                'BiTemporal',
+                f'{model_name}.sql'
+            )
+
+            if not os.path.exists(model_path):
+                raise ValueError(f"Model file not found: {model_path}")
+
+            with open(model_path, 'r') as f:
+                self.model_content = f.read()
+
             self.config = self._parse_model_config()
         except Exception as e:
             logger.error(f"Failed to initialize DbtModel: {e}")
@@ -30,7 +50,20 @@ class DbtModel:
         try:
             logger.debug(f"Parsing config for model {self.model_name}")
             config = ModelConfig()
-            # Basic config parsing for unique_key and timestamp columns
+
+            # Find config block
+            pattern = r"{{\s*config\s*\(([^}]+)\s*\)\s*}}"
+            config_matches = re.finditer(pattern, self.model_content)
+
+            for match in config_matches:
+                config_content = match.group(1)
+
+                # Extract unique_key
+                unique_key_pattern = r"unique_key\s*=\s*['\"]([^'\"]+)['\"]"
+                unique_key_match = re.search(unique_key_pattern, config_content)
+                if unique_key_match:
+                    config.unique_key = unique_key_match.group(1)
+
             logger.debug(f"Parsed config: {config}")
             return config
         except Exception as e:

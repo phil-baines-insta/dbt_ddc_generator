@@ -113,34 +113,25 @@ class DbtProfiles:
             logger.error(f"Error getting profile target: {e}")
             raise
 
-    def get_database_schema(
-        self, profile_name: str, env: str = "local"
-    ) -> Optional[Tuple[str, str]]:
-        """
-        Get the database and schema for a profile in a specific environment.
-
-        Args:
-            profile_name: Name of the profile (e.g., 'de_finance')
-            env: Environment to use ('local', 'dev', or 'prod')
-
-        Returns:
-            Optional[Tuple[str, str]]: Tuple of (database, schema) if found
-        """
-        target = self.get_profile_target(profile_name, env)
-        if not target:
-            logger.warning(
-                f"No target found for profile '{profile_name}' in environment '{env}'"
-            )
-            return None
-
+    def get_database_schema(self, profile_name: str, env: str) -> Optional[Tuple[str, str]]:
+        """Get database and schema from profile."""
         try:
-            database = str(target.get("database", ""))
-            schema = str(target.get("schema", ""))
-            if not database or not schema:
+            # Construct target name: de_finance_env (e.g., de_finance_prod)
+            target = f"de_finance_{env}"
+
+            # Look in the instacart profile's outputs
+            instacart_profile = self.profiles.get("instacart", {})
+            outputs = instacart_profile.get("outputs", {})
+
+            if target not in outputs:
+                logger.warning(f"Profile target not found: {target}")
                 return None
-            return (database, schema)
+
+            target_config = outputs[target]
+            return target_config.get('database'), target_config.get('schema')
+
         except Exception as e:
-            logger.error(f"Error extracting database/schema from target: {e}")
+            logger.error(f"Failed to get database/schema: {e}")
             return None
 
     def validate_profile_structure(self, profile_name: str, env: str = "local") -> bool:

@@ -6,6 +6,7 @@ import click
 import pkg_resources
 
 from dbt_ddc_generator.core.generator.generator import Generator
+from dbt_ddc_generator.core.utils.git import GitOperations
 
 # Configure logging
 logging.basicConfig(
@@ -101,17 +102,38 @@ def generate(model_name: str, env: str, output_dir: Optional[str] = None) -> Non
             print(check['content'])
             print("\n---\n")
 
-        # Prompt user
+        # Prompt user for creating files
         if click.confirm('Do you want to create these files in the carrot repo?', default=False):
             # Keep prompting until valid branch name is provided
             while True:
-                branch_name = click.prompt('Enter branch name', type=str, default='')
+                branch_name = click.prompt('Enter branch name', type=str)
                 if branch_name:
                     break
-                print("You must enter a branch name")  # Use print instead of logger for cleaner output
+                print("You must enter a branch name")
 
             generator.write_to_carrot(model_name, generated_checks, branch_name)
             logger.info(f"Successfully written checks to carrot repo in branch: {branch_name}")
+
+            # Prompt for commit and push
+            if click.confirm('Do you want to commit and push these changes to remote?', default=False):
+                git_ops = GitOperations()
+                git_ops.commit_and_push(branch_name)
+                logger.info(f"Successfully pushed changes to remote branch: {branch_name}")
+
+                # Prompt for PR creation
+                if click.confirm('Do you want to create a pull request?', default=False):
+                    # Keep prompting until valid PR title is provided
+                    while True:
+                        pr_title = click.prompt('Enter PR title', type=str)
+                        if pr_title:
+                            break
+                        print("You must enter a PR title")
+
+                    git_ops.create_pull_request(branch_name, model_name, pr_title)
+                else:
+                    logger.info("Skipped creating pull request")
+            else:
+                logger.info("Skipped pushing changes to remote")
         else:
             logger.info("Skipped writing to carrot repo")
 

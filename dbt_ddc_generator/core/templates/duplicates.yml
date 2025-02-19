@@ -2,7 +2,7 @@ formatVersion: 1
 name: {{ name }}
 description: {{ description }}
 system: data-eng-finance-checks
-every: {{ schedule_interval }}
+every: 24h
 mode: list
 source: finance-snowflake
 fail_on: non-zero
@@ -12,7 +12,7 @@ query: |
   select
     {{ column_name }},
     count(1)
-  from {{ table }}
+  from {{ table_fqdn }}
   group by {{ column_name }}
   having count(1) > 1
 annotations:

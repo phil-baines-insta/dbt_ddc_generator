@@ -75,7 +75,7 @@ class DDCTranslator:
 
     def _validate_config(self, config: Dict) -> None:
         """
-        Validate check configuration.
+        Validate check configuration and normalize values.
 
         Args:
             config: Configuration dictionary
@@ -86,7 +86,6 @@ class DDCTranslator:
         required_fields = [
             "name",
             "description",
-            "schedule_interval",
             "table",
             "column_name",
             "table_fqdn",
@@ -94,6 +93,11 @@ class DDCTranslator:
         missing_fields = [field for field in required_fields if field not in config]
         if missing_fields:
             raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
+
+        # Convert all string values to lowercase
+        for key, value in config.items():
+            if isinstance(value, str):
+                config[key] = value.lower()
 
     def generate_duplicates_check(self, config: Dict) -> str:
         """
