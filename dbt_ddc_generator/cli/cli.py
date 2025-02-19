@@ -14,6 +14,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+print("IT WORKS!!")
+
 
 def get_version() -> str:
     """

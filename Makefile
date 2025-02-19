@@ -1,18 +1,22 @@
-.PHONY: install lint format clean build
+.PHONY: install lint format clean build test
 
 install:
-	pip install -e .
-	pip install -r requirements-dev.txt
-	pip install -r requirements.txt
+	poetry install
 
 lint:
-	ruff check .
-	mypy .
-	black --check .
+	poetry run ruff check .
+	poetry run mypy .
+	poetry run black --check .
 
 format:
-	ruff check --fix .
-	black .
+	poetry run ruff check --fix .
+	poetry run black .
+
+test_results:
+	mkdir -p test_results
+
+test: test_results
+	poetry run pytest --verbose tests/ --junit-xml test_results/test-results.xml
 
 clean:
 	rm -rf build/
@@ -22,10 +26,4 @@ clean:
 	find . -type f -name "*.pyc" -delete
 
 build: clean
-	python setup.py sdist bdist_wheel
-
-test_results:
-	mkdir -p test_results
-
-test: test_results
-	pytest --verbose tests/ --junit-xml test_results/test-results.xml
+	poetry build
