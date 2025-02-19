@@ -14,6 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 def get_version() -> str:
     """
     Get the current version of dbt-ddc-generator.

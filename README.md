@@ -1,2 +1,141 @@
-# dbt_ddc_generator
-repository to build DDC yaml from a dbt model
+
+
+
+
+Yes, I'll create a better formatted README.md that accurately reflects your project structure and functionality:
+
+```markdown
+# DBT DDC Generator
+
+A tool for generating Data Documentation and Contracts (DDC) for dbt models.
+
+## Overview
+
+The DBT DDC Generator automates the creation of data quality checks and documentation for your dbt models. It generates three types of checks:
+
+- **Duplicates Check**: Verifies no duplicate records exist based on unique key
+- **Completeness Check**: Ensures data completeness against source tables
+- **Freshness Check**: Validates data freshness using timestamp columns
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8 or higher
+- Poetry for dependency management
+
+### Install from Source
+
+```bash
+# Clone the repository
+git clone git@github.com:instacart/dbt-ddc-generator.git
+cd dbt-ddc-generator
+
+# Install dependencies
+poetry install
+```
+
+### Environment Setup
+
+Create a `.env` file in the project root:
+
+```bash
+instacart_dbt_directory=/path/to/your/dbt/project
+dbt_profiles_directory=/path/to/your/dbt/profiles
+carrot_directory=/path/to/carrot/repo
+GITHUB_TOKEN=your_github_token
+```
+
+## Usage
+
+### Basic Commands
+
+```bash
+# Generate checks for a single model
+dbtddc generate fact_orders --env prod
+
+# Generate checks for multiple models
+dbtddc generate fact_orders dim_products --env prod
+
+# Show version
+dbtddc version
+```
+
+### Environment Options
+
+- `local` (default): Local development environment
+- `dev`: Development environment
+- `prod`: Production environment
+
+## Project Structure
+
+```
+dbt_ddc_generator/
+├── cli/                    # Command line interface
+│   └── cli.py             # CLI implementation
+├── core/                   # Core functionality
+│   ├── generator/         # Check generation logic
+│   │   └── generator.py   # Main generator class
+│   ├── templates/         # Check templates
+│   │   ├── completeness.yml
+│   │   ├── duplicates.yml
+│   │   └── freshness.yml
+│   └── utils/            # Utility functions
+│       ├── dbt_model.py      # DBT model parsing
+│       ├── dbt_profiles.py   # Profile management
+│       ├── dbt_scheduling.py # Schedule parsing
+│       ├── ddc_translator.py # Template rendering
+│       ├── git.py           # Git operations
+│       └── cron_converter.py # Cron expression handling
+└── tests/                # Test suite
+```
+
+## Development
+
+### Setup Development Environment
+
+```bash
+# Install all dependencies including dev dependencies
+poetry install
+```
+
+### Development Commands
+
+```bash
+# Format code
+make format
+
+# Run linters
+make lint
+
+# Run tests
+make test
+
+# Build package
+make build
+```
+
+### Testing
+
+Tests are written using pytest and can be run with:
+
+```bash
+make test
+```
+
+### Code Style
+
+The project uses:
+- Black for code formatting
+- Ruff for linting
+- MyPy for type checking
+
+## Contributing
+
+1. Create a new branch
+2. Make your changes
+3. Run tests and linting
+4. Submit a pull request
+```
+
+Would you like me to make these changes to your README.md?
