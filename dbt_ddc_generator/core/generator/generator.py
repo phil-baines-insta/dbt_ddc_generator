@@ -16,7 +16,14 @@ class Generator:
     def __init__(self) -> None:
         """Initialize Generator with required components."""
         try:
-            load_dotenv()
+            # Get the project root directory (where .env is located)
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            env_path = os.path.join(project_root, ".env")
+
+            if not os.path.exists(env_path):
+                raise ValueError(f".env file not found at {env_path}")
+
+            load_dotenv(env_path)
 
             self.dbt_directory = os.getenv("instacart_dbt_directory")
             if not self.dbt_directory:

@@ -152,9 +152,13 @@ class GitOperations:
             logger.error(f"Failed to create PR: {e}")
             raise
 
-    def write_to_files(self, model_name: str, generated_checks: list) -> bool:
+    def write_to_files(self, model_name: str, generated_checks: list, database: str, schema: str) -> bool:
         """Write check files to disk."""
         try:
+            # Format database and schema names to use underscores and lowercase
+            formatted_database = database.replace("-", "_").lower()
+            formatted_schema = schema.replace("-", "_").lower()
+
             # Check if all files exist first
             all_files_exist = True
             print(f"Checking existing files for {model_name}...")
@@ -163,7 +167,11 @@ class GitOperations:
             # First check if all files exist
             for check in generated_checks:
                 check_path = os.path.join(
-                    self.carrot_directory, f"{model_name}_{check['type']}.yml"
+                    self.carrot_directory,
+                    formatted_database,
+                    formatted_schema,
+                    check['type'],
+                    f"{formatted_database}_{formatted_schema}_{model_name}_{check['type']}.yml"
                 )
                 if not os.path.exists(check_path):
                     all_files_exist = False
@@ -172,13 +180,19 @@ class GitOperations:
             # List all files with their status
             for check in generated_checks:
                 check_path = os.path.join(
-                    self.carrot_directory, f"{model_name}_{check['type']}.yml"
+                    self.carrot_directory,
+                    formatted_database,
+                    formatted_schema,
+                    check['type'],
+                    f"{formatted_database}_{formatted_schema}_{model_name}_{check['type']}.yml"
                 )
                 if os.path.exists(check_path):
                     print(f"  Skipped: {os.path.basename(check_path)} (already exists)")
                     continue
 
                 if not all_files_exist:  # Only write if we're creating files
+                    # Create directory if it doesn't exist
+                    os.makedirs(os.path.dirname(check_path), exist_ok=True)
                     with open(check_path, "w") as f:
                         f.write(check["content"])
                     print(f"  Created: {os.path.basename(check_path)}")

@@ -24,15 +24,20 @@ class DbtModel:
             self.dbt_directory = dbt_directory
             logger.info(f"Initializing DbtModel for {model_name}")
 
-            # Find model file by walking through models directory
-            model_file = None
-            models_dir = os.path.join(self.dbt_directory, "models")
-            for root, _, files in os.walk(models_dir):
-                if f"{model_name}.sql" in files:
-                    model_file = os.path.join(root, f"{model_name}.sql")
-                    break
+            # Handle model name that might include the full path
+            if "/" in model_name:
+                # If model_name includes path, use it directly
+                model_file = os.path.join(self.dbt_directory, "models", f"{model_name}.sql")
+            else:
+                # Otherwise search for it in models directory
+                model_file = None
+                models_dir = os.path.join(self.dbt_directory, "models")
+                for root, _, files in os.walk(models_dir):
+                    if f"{model_name}.sql" in files:
+                        model_file = os.path.join(root, f"{model_name}.sql")
+                        break
 
-            if not model_file:
+            if not model_file or not os.path.exists(model_file):
                 raise ValueError(f"Model file not found for: {model_name}")
 
             with open(model_file, "r") as f:

@@ -1,6 +1,7 @@
 import logging
 import sys
 from typing import Optional
+import subprocess
 
 import click
 import pkg_resources
@@ -111,16 +112,41 @@ def generate(model_names: tuple, env: str, output_dir: Optional[str] = None) -> 
         if click.confirm(
             "Do you want to create these files in the carrot repo?", default=False
         ):
-            # Keep prompting until valid branch name is provided
-            while True:
-                branch_name = click.prompt("Enter branch name", type=str)
-                if branch_name:
-                    break
-                print("You must enter a branch name")
-
             git_ops = GitOperations()
 
-            # Create or switch to branch first
+            # Check if we're on a branch
+            result = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                check=True,
+                capture_output=True,
+                text=True,
+                cwd=git_ops.carrot_directory,
+            )
+            current_branch = result.stdout.strip()
+
+            if current_branch != "master":
+                # We're on a branch, ask if they want to use it
+                if click.confirm(
+                    f"You are currently on branch '{current_branch}'. Would you like to use this branch?",
+                    default=True,
+                ):
+                    branch_name = current_branch
+                else:
+                    # Keep prompting until valid branch name is provided
+                    while True:
+                        branch_name = click.prompt("Enter branch name", type=str)
+                        if branch_name:
+                            break
+                        print("You must enter a branch name")
+            else:
+                # We're on master, require a branch name
+                while True:
+                    branch_name = click.prompt("Enter branch name", type=str)
+                    if branch_name:
+                        break
+                    print("You must enter a branch name")
+
+            # Create or switch to branch
             git_ops.create_branch_from_master(branch_name)
             print()  # Add blank line after branch message
 
@@ -129,8 +155,14 @@ def generate(model_names: tuple, env: str, output_dir: Optional[str] = None) -> 
             for generated_check in all_generated_checks:
                 model_name = generated_check["model"]
                 checks = generated_check["checks"]
+                # Get database and schema from profile
+                db_schema = generator.profiles.get_database_schema(model_name, env)
+                if not db_schema:
+                    logger.error(f"No database/schema found for model '{model_name}' in environment '{env}'")
+                    continue
+                database, schema = db_schema
                 if git_ops.write_to_files(
-                    model_name, checks
+                    model_name, checks, database, schema
                 ):  # New method that just handles file operations
                     files_created = True
 

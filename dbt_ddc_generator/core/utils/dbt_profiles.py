@@ -120,24 +120,38 @@ class DbtProfiles:
     def get_deploy_profile_from_schedule(self, model_name: str) -> Optional[str]:
         """Get deploy profile from model's schedule file."""
         try:
-            # Look in scheduling directory for model's schedule
+            # Look in scheduling directory for model's schedule file
             schedule_dir = os.path.join(self.dbt_directory, "scheduling")
+            logger.info(f"Searching for pipeline.yml in directory: {schedule_dir}")
 
             # Walk through scheduling directory to find model's schedule file
             for root, _, files in os.walk(schedule_dir):
+                logger.debug(f"Checking directory: {root}")
                 for file in files:
                     if file.endswith(".yml"):
                         schedule_path = os.path.join(root, file)
-                        with open(schedule_path, "r") as f:
-                            schedule = yaml.safe_load(f)
+                        logger.debug(f"Checking file: {schedule_path}")
+                        try:
+                            with open(schedule_path, "r") as f:
+                                schedule = yaml.safe_load(f)
+                                logger.debug(f"Loaded YAML content from {schedule_path}")
 
-                            # Check if this schedule file contains our model
-                            if model_name in str(schedule):
-                                # Extract deploy_profile
-                                deploy_profile = schedule.get("deploy_profile")
-                                if deploy_profile:
-                                    return deploy_profile
+                                # Check if this schedule file contains our model
+                                if model_name in str(schedule):
+                                    logger.info(f"Found model '{model_name}' in {schedule_path}")
+                                    # Extract deploy_profile
+                                    deploy_profile = schedule.get("profile")
+                                    if deploy_profile:
+                                        logger.info(f"Found deploy_profile: {deploy_profile}")
+                                        return deploy_profile
+                                    else:
+                                        logger.warning(f"No profile found in {schedule_path}")
+                        except yaml.YAMLError as e:
+                            logger.error(f"Error parsing {schedule_path}: {e}")
+                        except Exception as e:
+                            logger.error(f"Error reading {schedule_path}: {e}")
 
+            logger.warning(f"No pipeline.yml found containing model '{model_name}'")
             return None
 
         except Exception as e:
@@ -149,28 +163,31 @@ class DbtProfiles:
     ) -> Optional[Tuple[str, str]]:
         """Get database and schema from profile."""
         try:
-            # Get pipeline config for model
-            pipeline_config = self.scheduling.find_pipeline_config(model_name)
-            if not pipeline_config:
-                return None
+            logger.info(f"Getting database/schema for model '{model_name}' in environment '{env}'")
 
-            # Get deploy profile from pipeline config
-            deploy_profile = pipeline_config.get("deploy_profile")
+            # Get the deploy profile from the model's schedule
+            deploy_profile = self.get_deploy_profile_from_schedule(model_name)
             if not deploy_profile:
+                logger.error(f"No deploy profile found for model '{model_name}'")
                 return None
 
-            # Construct target name using deploy profile and env
-            target = f"{deploy_profile}_{env}"
+            logger.info(f"Found deploy profile: {deploy_profile}")
 
-            # Look in the instacart profile's outputs
-            instacart_profile = self.profiles.get("instacart", {})
-            outputs = instacart_profile.get("outputs", {})
-
-            if target not in outputs:
+            # Get the target configuration for this profile
+            target = self.get_profile_target(deploy_profile, env)
+            if not target:
+                logger.error(f"No target found for profile {deploy_profile} in environment {env}")
                 return None
 
-            target_config = outputs[target]
-            return target_config.get("database"), target_config.get("schema")
+            database = target.get("database")
+            schema = target.get("schema")
+
+            if not database or not schema:
+                logger.error(f"Missing database or schema in profile target for {deploy_profile}")
+                return None
+
+            logger.info(f"Found database={database}, schema={schema} for model {model_name}")
+            return database, schema
 
         except Exception as e:
             logger.error(f"Failed to get database/schema: {e}")
