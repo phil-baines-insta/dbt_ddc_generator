@@ -159,6 +159,13 @@ class GitOperations:
             formatted_database = database.replace("-", "_").lower()
             formatted_schema = schema.replace("-", "_").lower()
 
+            # Map check types to folder names
+            check_type_to_folder = {
+                "duplicates": "uniqueness",
+                "completeness": "completeness",
+                "freshness": "freshness"
+            }
+
             # Check if all files exist first
             all_files_exist = True
             print(f"Checking existing files for {model_name}...")
@@ -166,11 +173,12 @@ class GitOperations:
 
             # First check if all files exist
             for check in generated_checks:
+                folder_name = check_type_to_folder.get(check['type'], check['type'])
                 check_path = os.path.join(
                     self.carrot_directory,
                     formatted_database,
                     formatted_schema,
-                    check['type'],
+                    folder_name,
                     f"{formatted_database}_{formatted_schema}_{model_name}_{check['type']}.yml"
                 )
                 if not os.path.exists(check_path):
@@ -179,11 +187,12 @@ class GitOperations:
 
             # List all files with their status
             for check in generated_checks:
+                folder_name = check_type_to_folder.get(check['type'], check['type'])
                 check_path = os.path.join(
                     self.carrot_directory,
                     formatted_database,
                     formatted_schema,
-                    check['type'],
+                    folder_name,
                     f"{formatted_database}_{formatted_schema}_{model_name}_{check['type']}.yml"
                 )
                 if os.path.exists(check_path):
